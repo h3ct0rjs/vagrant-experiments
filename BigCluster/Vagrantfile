@@ -7,6 +7,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "shell", path: "provision.sh"
 
   (2..11).each do |i|
+    
     config.vm.define "worker-#{i}" do |node|
       node.vm.box = "ubuntu/bionic64"
       node.vm.hostname = "node-#{i}"
@@ -15,9 +16,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       node.vm.provider "virtualbox" do |vb|
         vb.gui = false
         vb.memory = "230"
+      end  
+      
     end
-    
-    end
+
   end
 
   config.vm.define "master" do |master|
