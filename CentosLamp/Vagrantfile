@@ -1,0 +1,16 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#hfjimenez@utp.edu.co 
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.provision "shell", path: "provision.sh"
+
+  config.vm.define "webserver" do |master|
+    master.vm.box = "centos/7"
+    master.vm.hostname = "master"
+    master.vm.network :private_network, ip: "10.11.12.50"
+    master.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+  end
+
+end
