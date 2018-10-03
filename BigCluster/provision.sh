@@ -19,6 +19,7 @@ main() {
 	autoremove_go
 	hostnames_go
 	sshkeys_copy
+	nfs_folder
 }	
 
 repositories_go() {
@@ -31,8 +32,8 @@ update_go() {
 	echo -e "[${WHITE}Ok${NC}] Updating package and distribution "
 	apt-get update
 	#echo -e "${WHITE}"
-	apt-get dist-upgrade -y  #We're going to comment this, it speed up our worker creation :) 
-	echo -e "${NC}"
+	#apt-get dist-upgrade -y  #We're going to comment this, it speed up our worker creation :) 
+	#echo -e "${NC}"
 }
 
 autoremove_go() {
@@ -50,10 +51,9 @@ tools_go() {
 
 hostnames_go(){
 	echo "10.11.12.50 master">>/etc/hosts
-    for i in `seq 2 11`;
-    do 
-        echo  "10.11.12.$i node-$i"
-    done
+	echo "10.11.12.51 worker1">>/etc/hosts
+	echo "10.11.12.52 worker2">>/etc/hosts
+	echo "10.11.12.53 worker3">>/etc/hosts
 }
 
 sshkeys_copy(){
@@ -65,8 +65,39 @@ sshkeys_copy(){
       
       (echo; cat /vagrant/id_rsa.pub) >> /home/vagrant/.ssh/authorized_keys
       cp /vagrant/id_rsa* /home/vagrant/.ssh/
+      chown vagrant:vagrant /home/vagrant/.ssh/id_rsa*
 }
 
+nfs_folder(){
+        echo -e "[${WHITE}Ok${NC}] Setting up Shared FileSystem"
+
+	if [ "$HOSTNAME" = "master" ]; then
+ 		echo -e "[${WHITE}Ok${NC}] Installing NFS on Master Node"
+		mkdir /home/vagrant/cloud	#Create the cloud folder to shared accross the cluster :) 
+		chown vagrant:vagrant  /home/vagrant/cloud
+		apt install -y nfs-server
+		echo "/home/vagrant/cloud *(rw,sync,no_root_squash,no_subtree_check)">>/etc/exports	#Persistence against reboots.
+		exportfs -a
+		service nfs-kernel-server restart
+	else 
+		echo -e "[${WHITE}Ok${NC}] Installing NFS on Worker Node"
+		apt install -y nfs-common
+		mkdir /home/vagrant/cloud
+		chown vagrant:vagrant  /home/vagrant/cloud
+		mount -t nfs master:/home/vagrant/cloud /home/vagrant/cloud
+		echo "master:/home/vagrant/cloud /home/vagrant/cloud nfs">>/etc/fstab 
+		df -h
+	fi
+
+	echo -e "[${YELLOW}Ok${NC}]NFS DONE"
+}
+
+test_connectionssh(){
+   machines=(master worker1 worker2 worker3)
+   for h in ${machines[@]}; 
+   do  yes yes | ssh vagrant@$h
+   done
+}
 
 main
 exit 0
