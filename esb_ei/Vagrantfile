@@ -1,0 +1,27 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#hfjimenez@utp.edu.co 
+VAGRANTFILE_API_VERSION = "2"
+
+disk = './secondDisk.vdi'
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.provision "shell", path: "provision.sh", keep_color: "true"
+
+  config.vm.define "esb" do |esb|
+    esb.vm.box = "centos/7"
+    esb.vm.hostname = "sigab-ei"
+    esb.vm.network :private_network, ip: "10.11.12.50"
+    
+    esb.vm.provider "virtualbox" do |vb|
+      unless File.exist?(disk)
+        vb.customize ['createhd', '--filename', disk, '--variant', 'Fixed', '--size', 20 * 1024]
+      end
+     
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', disk]
+    end
+
+    #for i in 9000..10000
+    #  esb.vm.network "forwarded_port", guest: i, host: i, host_ip: "127.0.0.1" 
+    #end
+  end
+end
